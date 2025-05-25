@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Drone Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <style>
+        #map { height: 600px; }
+    </style>
+</head>
+<body>
+    <h1>Drone Map</h1>
+    <button id="start-emulation">Старт эмуляции</button>
+    <div id="map"></div>
+
+    <script>
+        const droneIcon = L.icon({
+            iconUrl: '{% static "/img/drone-icon.png" %}',
+            iconSize:     [40, 40], // размер иконки в пикселях
+            iconAnchor:   [20, 20], // точка иконки, которая будет "привязана" к координатам
+            popupAnchor:  [0, -20]  // положение всплывающей подсказки относительно иконки
+        });
+
+        const map = L.map('map').setView([51.1605, 71.4704], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Массив координат [latitude, longitude] для Leaflet
+        const latLngs = [
+            [51.1282, 71.4278],
+            [51.1290, 71.4300],
+            [51.1300, 71.4315],
+            [51.1310, 71.4325]
+        ];
+
+        let droneMarker = null;
+        let index = 0;
+        const droneId = 1;
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (const cookie of cookies) {
+                    const trimmed = cookie.trim();
+                    if (trimmed.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function sendLocation(lat, lng) {
+            // Формат GeoJSON: [longitude, latitude]
+            const data = {
+                drone: droneId,
+                location: {
+                    type: "Point",
+                    coordinates: [lng, lat]
+                }
+            };
+
+            fetch("/api/dronelocations/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            }).then(response => {
+                if (!response.ok) {
+                    console.error("Failed to send location", response.status);
+                }
+            });
+        }
+
+        function startEmulation() {
+            map.closePopup();
+            if (droneMarker) {
+                map.removeLayer(droneMarker);
+            }
+            index = 0;
+            droneMarker = L.marker(latLngs[0], { icon: droneIcon }).addTo(map);
+            droneMarker.bindPopup("Drone " + droneId);
+
+            const interval = setInterval(() => {
+                if (index >= latLngs.length) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                const [lat, lng] = latLngs[index];
+                droneMarker.setLatLng([lat, lng]);
+                
+
+                sendLocation(lat, lng);
+
+                index++;
+            }, 1000);
+        }
+
+        document.getElementById('start-emulation').addEventListener('click', startEmulation);
+
+        // Начальная загрузка текущих дронов с сервера (если нужно)
+        async function loadDroneLocations() {
+            try {
+                const response = await fetch('/api/drone-locations/');
+                if (!response.ok) {
+                    console.error('Failed to load drone locations:', response.status);
+                    return;
+                }
+                const data = await response.json();
+
+                data.forEach(item => {
+                    const coords = item.location.coordinates; // [lng, lat]
+                    const name = item.drone_name || 'Unknown Drone';
+                    L.marker([coords[1], coords[0]]).addTo(map).bindPopup(name);
+                });
+            } catch (err) {
+                console.error('Error loading drone locations:', err);
+            }
+        }
+
+        loadDroneLocations();
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'utm/js/emulator.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Просмотр маршрута{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow rounded-4 border-0">
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="card-title">Маршрут №{{ route.id }}</h2>
+          <div class="d-flex align-items-center">
+            <input type="text" name="comments" placeholder="Комментарий" class="form-control me-2" style="width: 300px;">
+            <button type="submit" name="status" value="approved" class="btn btn-success me-2">Подтвердить</button>
+            <button type="submit" name="status" value="rejected" class="btn btn-danger">Отклонить</button>
+          </div>
+        </div>
+      </form>
+
+      <h5 class="mb-3">Информация о полёте</h5>
+      <ul class="list-unstyled">
+        <li><strong>Статус:</strong>
+          {% if route.status == 'pending' %}Ожидает подтверждения
+          {% elif route.status == 'approved' %}Одобрен
+          {% elif route.status == 'rejected' %}Отклонён
+          {% elif route.status == 'in_progress' %}В процессе
+          {% elif route.status == 'completed' %}Завершён
+          {% elif route.status == 'violated' %}Нарушен
+          {% else %}Неизвестно
+          {% endif %}
+        </li>
+        <li><strong>Тип миссии:</strong> {{ route.mission_type|default:"-" }}</li>
+        <li><strong>Высота полёта:</strong> {{ route.altitude }} м</li>
+        <li><strong>Время начала:</strong> {{ route.start_time }}</li>
+        <li><strong>Время окончания:</strong> {{ route.end_time }}</li>
+        <li><strong>Дата создания:</strong> {{ route.created_at }}</li>
+        <li><strong>Последнее обновление:</strong> {{ route.updated_at }}</li>
+        {% if route.status == 'rejected' and route.rejection_reason %}
+          <li class="text-danger"><strong>Причина отклонения:</strong> {{ route.rejection_reason }}</li>
+        {% endif %}
+      </ul>
+
+      <h5 class="mt-4 mb-2">Информация о пилоте</h5>
+      <ul class="list-unstyled">
+        <li><strong>Имя:</strong> {{ route.pilot.user }}</li>
+        <li><strong>Email:</strong> {{ route.pilot.user.email }}</li>
+      </ul>
+
+      <h5 class="mt-4 mb-2">Информация о БПЛА</h5>
+      <ul class="list-unstyled">
+        <li><strong>Название:</strong> {{ route.drone.name }}</li>
+        <li><strong>Номер:</strong> {{ route.drone.unique_number }}</li>
+        <li><strong>Тип:</strong> {{ route.drone.drone_type }}</li>
+        <li><strong>Макс. высота:</strong> {{ route.drone.max_altitude }} м</li>
+        <li><strong>Макс. скорость:</strong> {{ route.drone.max_speed }} км/ч</li>
+        <li><strong>Описание:</strong> {{ route.drone.description }}</li>
+      </ul>
+
+      <h5 class="mt-4 mb-2">Маршрут на карте</h5>
+      <div id="map" class="rounded-4 border" style="height: 500px; border-color: #dee2e6;" data-geojson='{{ route.path.geojson|safe }}'></div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const geojsonData = JSON.parse(document.getElementById('map').dataset.geojson);
+    const map = L.map('map').setView([43.2389, 76.8897], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const routeLayer = L.geoJSON(geojsonData).addTo(map);
+    map.fitBounds(routeLayer.getBounds());
+  });
+</script>
+{% endblock %}

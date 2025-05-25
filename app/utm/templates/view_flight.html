@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Маршрут #{{ flight.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow rounded-4 border-0">
+    <div class="card-body">
+      <h2 class="card-title mb-4">Маршрут #{{ flight.id }}</h2>
+
+      <ul class="list-group list-group-flush mb-4">
+        <li class="list-group-item"><strong>Дрон:</strong> {{ flight.drone.name }}</li>
+        <li class="list-group-item"><strong>Высота:</strong> {{ flight.altitude }} м</li>
+        <li class="list-group-item">
+          <strong>Время:</strong> {{ flight.start_time|date:"Y-m-d H:i" }} – {{ flight.end_time|date:"Y-m-d H:i" }}
+        </li>
+        <li class="list-group-item">
+          <strong>Статус:</strong> 
+          <span class="badge 
+            {% if flight.status == 'pending' %}bg-warning
+            {% elif flight.status == 'approved' %}bg-success
+            {% elif flight.status == 'rejected' %}bg-danger
+            {% else %}bg-secondary
+            {% endif %}">
+            {{ flight.get_status_display }}
+          </span>
+        </li>
+        <li class="list-group-item"><strong>Тип миссии:</strong> {{ flight.mission_type }}</li>
+        <li class="list-group-item"><strong>Создан:</strong> {{ flight.created_at|date:"Y-m-d H:i" }}</li>
+        {% if flight.rejection_reason %}
+          <li class="list-group-item text-danger">
+            <strong>Причина отказа:</strong> {{ flight.rejection_reason }}
+          </li>
+        {% endif %}
+      </ul>
+
+      <div class="mb-4">
+        <h5>Маршрут на карте:</h5>
+        <div id="map" style="height: 400px; border-radius: 12px;"></div>
+      </div>
+
+      <a href="{% url 'pilot_dashboard' %}" class="btn btn-outline-secondary rounded-pill">← Назад</a>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const map = L.map('map').setView([51.1605, 71.4704], 13); // Центр Астаны
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const geojsonData = {{ flight.path.geojson|safe }};
+
+    const geoLayer = L.geoJSON(geojsonData, {
+      style: {
+        color: '#007bff',
+        weight: 4
+      }
+    }).addTo(map);
+
+    map.fitBounds(geoLayer.getBounds());
+  });
+</script>
+{% endblock %}

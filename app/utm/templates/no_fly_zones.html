@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Запретные зоны{% endblock %}
+
+{% block content %}
+  <h2 class="text-white mb-3">Запретные зоны</h2>
+
+  <div id="map" style="height: 600px; width: 100%; border: 2px solid #ccc; border-radius: 10px;"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+
+  <script>
+    const map = L.map('map').setView([51.1605, 71.4704], 10);  // можно заменить на центр нужного региона
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const zones = {{ zones_geojson|safe }};
+
+    function getColor(level) {
+      switch(level) {
+        case 'strict': return 'red';
+        case 'conditional': return 'orange';
+        case 'allowed': return 'green';
+        default: return 'gray';
+      }
+    }
+
+    L.geoJSON(zones, {
+      style: function (feature) {
+        return {
+          color: getColor(feature.properties.restriction_level),
+          fillOpacity: 0.4,
+        };
+      },
+      onEachFeature: function (feature, layer) {
+        const props = feature.properties;
+        let popup = `<strong>${props.name}</strong><br>${props.description}<br><span style="color:${getColor(props.restriction_level)}">${props.restriction_level}</span>`;
+        if (props.start_time) popup += `<br>С: ${props.start_time}`;
+        if (props.end_time) popup += `<br>До: ${props.end_time}`;
+        layer.bindPopup(popup);
+      }
+    }).addTo(map);
+  </script>
+{% endblock %}

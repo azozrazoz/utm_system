@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Создание маршрута{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow rounded-4 border-0">
+    <div class="card-body p-4">
+      <h2 class="card-title mb-4">Создание маршрута</h2>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="row g-4">
+
+          <div class="col-md-6">
+            <label for="{{ form.drone.id_for_label }}" class="form-label">{{ form.drone.label }}</label>
+            {{ form.drone|add_class:"form-select" }}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.altitude.id_for_label }}" class="form-label">{{ form.altitude.label }}</label>
+            {{ form.altitude|add_class:"form-control" }}
+          </div>
+
+          <div class="col-md-6">
+            <label for="id_start_time" class="form-label">{{ form.start_time.label }}</label>
+            <input type="text" id="id_start_time" name="start_time" class="form-control">
+          </div>
+          
+          <div class="col-md-6">
+            <label for="id_end_time" class="form-label">{{ form.end_time.label }}</label>
+            <input type="text" id="id_end_time" name="end_time" class="form-control">
+          </div>
+
+          <div class="col-md-12">
+            <label for="{{ form.mission_type.id_for_label }}" class="form-label">{{ form.mission_type.label }}</label>
+            {{ form.mission_type|add_class:"form-select" }}
+          </div>
+        </div>
+
+        <input type="hidden" name="path" id="id_path" />
+
+        <div class="mt-5">
+          <label class="form-label mb-2">Нарисуйте маршрут на карте:</label>
+          <div id="map" class="rounded-4 border" style="height: 450px; border-color: #dee2e6;"></div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <a href="{% url 'pilot_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">← Назад</a>
+          <button type="submit" class="btn btn-success rounded-pill px-4">Отправить на утверждение</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet + Draw -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    flatpickr("#id_start_time", {
+      enableTime: true,
+      dateFormat: "Y-m-d\\TH:i",
+      time_24hr: true,
+      locale: "ru",
+      altInput: true,
+      altFormat: "d.m.Y H:i",
+    });
+
+    flatpickr("#id_end_time", {
+      enableTime: true,
+      dateFormat: "Y-m-d\\TH:i",
+      time_24hr: true,
+      locale: "ru",
+      altInput: true,
+      altFormat: "d.m.Y H:i",
+    });
+
+    const map = L.map('map').setView([43.2389, 76.8897], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+    map.attributionControl.setPrefix(false);
+
+    const drawControl = new L.Control.Draw({
+      edit: {
+        featureGroup: drawnItems,
+        edit: false,
+        remove: true
+      },
+      draw: {
+        polyline: true,
+        polygon: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+      }
+    });
+    map.addControl(drawControl);
+
+    map.on('draw:created', function (e) {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(e.layer);
+      const geojson = e.layer.toGeoJSON();
+      document.getElementById('id_path').value = JSON.stringify(geojson.geometry);
+    });
+  });
+</script>
+{% endblock %}

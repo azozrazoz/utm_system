@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Регистрация БПЛА{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow rounded-4 border-0">
+    <div class="card-body p-4">
+      <h2 class="card-title mb-4">Регистрация Беспилотного Летательного Аппарата</h2>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+              <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+            {% if field.errors %}
+              <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <a href="{% url 'pilot_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">← Вернуться</a>
+          <button type="submit" class="btn btn-success rounded-pill px-4">Зарегистрировать БПЛА</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

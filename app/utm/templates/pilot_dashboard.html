@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Кабинет пилота{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 style="color: white;" class="mb-0">Добро пожаловать, {{ user.username }}</h2>
+    <div class="d-flex gap-2">
+      <a href="{% url 'create_flight' %}" class="btn btn-secondary rounded-pill">Создать маршрут</a>
+      <a href="{% url 'register_drone' %}" class="btn btn-secondary rounded-pill">Зарегистрировать БПЛА</a>
+    </div>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+  {% endif %}
+
+  {% if flights %}
+    <div class="card shadow rounded-4 border-0">
+      <div class="card-body">
+        <h4 class="card-title mb-3">Ваши маршруты</h4>
+        <ul class="list-group list-group-flush">
+          {% for flight in flights %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>ID:</strong> {{ flight.id }}<br>
+                <strong>Статус:</strong> 
+                <span class="badge 
+                  {% if flight.status == 'pending' %}bg-warning
+                  {% elif flight.status == 'approved' %}bg-success
+                  {% elif flight.status == 'rejected' %}bg-danger
+                  {% else %}bg-secondary
+                  {% endif %}">
+                  {{ flight.get_status_display }}
+                </span><br>
+                <strong>Создан:</strong> {{ flight.created_at|date:"Y-m-d H:i" }}
+              </div>
+              <div>
+                <a href="{% url 'view_flight' flight.id %}" class="btn btn-outline-secondary btn-sm rounded-pill">Подробнее</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-info mt-3" role="alert">
+      Пока что у вас нет маршрутов.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

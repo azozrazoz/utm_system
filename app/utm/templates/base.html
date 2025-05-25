@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}UTM Система{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6.8.3/dist/css/tempus-dominus.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+  <style>
+    .container {
+      padding-top: 20px;
+      padding-bottom: 40px;
+    }
+    body {
+      background-image: url("{% static 'img/drones_bd.png' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      padding-top: 70px;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5); /* уровень затемнения */
+      z-index: -1;
+    }
+    .notification {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #333;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 9999;
+        min-width: 250px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+      }
+      .notification.success { background-color: #4caf50; }
+      .notification.error { background-color: #f44336; }
+      .notification .close-btn {
+        margin-left: 15px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+  </style>
+</head>
+<body>
+    <div id="notifications-container">
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+    </div>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'home' %}">UTM</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if user.is_authenticated %}
+            {% if user.is_pilot %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'pilot_dashboard' %}">Кабинет пилота</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'no_fly_zones_page' %}">Запретные зоны</a></li>
+            {% elif user.is_operator %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'operator_dashboard' %}">Кабинет оператора</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'no_fly_zones_page' %}">Запретные зоны</a></li>
+            {% endif %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Выход</a></li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'register_pilot' %}">Регистрация</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Вход</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      {% for msg in success_messages %}
+        showNotification("{{ msg|escapejs }}", "success");
+      {% endfor %}
+      {% for msg in error_messages %}
+        showNotification("{{ msg|escapejs }}", "error");
+      {% endfor %}
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+
+<!-- Bootstrap JS (если еще не подключен) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Tempus Dominus JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6.8.3/dist/js/tempus-dominus.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        flatpickr("#id_start_time", {
+          enableTime: true,
+          dateFormat: "Y-m-d\\TH:i",
+          time_24hr: true,
+          locale: "ru"
+        });
+      
+        flatpickr("#id_end_time", {
+          enableTime: true,
+          dateFormat: "Y-m-d\\TH:i",
+          time_24hr: true,
+          locale: "ru"
+        });
+      </script>
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+  </div>
+</body>
+</html>

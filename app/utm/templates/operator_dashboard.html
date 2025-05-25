@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Оператор — Утверждение маршрутов{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 style="color: white;">Маршруты на утверждение</h2>
+  {% if permissions %}
+    <ul class="list-group">
+      {% for p in permissions %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>ID маршрута:</strong> {{ p.flight_route.id }}<br>
+            <strong>Пилот:</strong> {{ p.flight_route.pilot.full_name }}<br>
+            <strong>Создан:</strong> {{ p.flight_route.created_at|date:"Y-m-d H:i" }}
+          </div>
+          <a href="{% url 'review_flight_permission' p.id %}" class="btn btn-secondary btn-sm rounded-pill">Просмотреть</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-info mt-3">Нет маршрутов на утверждение.</div>
+  {% endif %}
+</div>
+{% endblock %}
