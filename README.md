@@ -25,7 +25,7 @@
 1. Клонировать репозиторий:
 
 ```bash
-git clone https://github.com/yourusername/utm-system.git
+git clone https://github.com/azozrazoz/utm-system.git
 cd utm-system
 
 pip install -r requirements.txt
